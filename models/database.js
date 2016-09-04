@@ -1,5 +1,5 @@
 var pg = require('pg');
-var connectionString =  'postgres://postgres:root123@localhost:5433/happiness';
+var connectionString =  'postgres://postgres:root123@localhost:5432/happiness';
 
 var client = new pg.Client(connectionString);
 client.connect();

@@ -8,7 +8,7 @@ var app = express();
 
 // ConnectionString is for connection -> username : postgres, password -> root123, database -> happiness
 // You have to change it according to your password and username
-var connectionString =  'postgres://postgres:root123@localhost:5433/happiness';
+var connectionString =  'postgres://postgres:root123@localhost:5432/happiness';
 
 var url = require('url');
 
@@ -19,117 +19,349 @@ router.get('/', function(req, res, next) {
 
 });
 
-// to redirect to next page after user click on share button
-router.get('/ad', function(req, res, next) {
 
-	var url_parts = url.parse(req.url, true);
-	var query = url_parts.query;
-	
-  	res.render('index', {title: req.query.name, orderId: req.query.orderId, orderAmount: req.query.orderAmount});
+router.get('/search', function(req, res, next) {
+	//
+  res.sendFile(path.join(__dirname, '../views', 'search.html'));
 
 });
+router.get('/list', function(req, res, next) {
+	//
+  res.sendFile(path.join(__dirname, '../views', 'list.html'));
 
-// When the user clicks Ok button after entering 
-router.post('/generate', function(req, res) {
+});
+router.get('/discussion', function(req, res, next) {
+	//
+  res.sendFile(path.join(__dirname, '../views', 'discussion.html'));
 
-	var couponCode = Math.floor((Math.random()* (9999- 1000) + 1000));
+});
+router.get('/answer', function(req, res, next) {
+	//
+  res.sendFile(path.join(__dirname, '../views', 'answer.html'));
 
-  	var data = {name: req.body.name, email: req.body.email, couponCode: couponCode};
-    if(req){
-    	console.log('fds');
-    	return res.status(200).json(data);
-    }
-    
+});
+router.post('/view_user', function(req, res) {
 
-    console.log(data);
-    return res.json(data);
+var results =[];
+
+  pg.connect(connectionString, function(err, client, done) {
+     // Handle connection errors
+     if(err) {
+       done();
+       console.log(err);
+       return res.status(500).json({ success: false, data: err});
+     }
+
+var query = client.query("SELECT * FROM students where name='"+req.body.name1+"'");
+
+     query.on('row', function(row) {
+         results.push(row);
+      });
+
+     query.on('end', function() {
+         done();
+         //console.log(results);
+         return res.json(results);
+     });
+ });
+    return 0;
 
 
 });
+router.post('/view_user1', function(req, res) {
 
+var results =[];
 
-// ---------- When the user clicks on order button
+  pg.connect(connectionString, function(err, client, done) {
+     if(err) {
+       done();
+       console.log(err);
+       return res.status(500).json({ success: false, data: err});
+     }
 
-router.get('/placeorder', function(req, res) {
+     var query = client.query("SELECT * FROM alumni where name='"+req.body.name1+"'");
 
-	var url_parts = url.parse(req.url, true);
-	var query = url_parts.query;
-	var data = {name: req.query.username, orderId: req.query.orderId, amount: req.query.amount};
-	var results = []; 
+     query.on('row', function(row) {
+         results.push(row);
+      });
 
-	pg.connect(connectionString, function(err, client, done) {
-        // Handle connection errors
+     query.on('end', function() {
+         done();
+         return res.json(results);
+     });
+   });
+      return 0;
+   });
+
+   router.post('/add_ques', function(req, res) {
+
+     pg.connect(connectionString, function(err, client, done) {
         if(err) {
           done();
           console.log(err);
           return res.status(500).json({ success: false, data: err});
         }
 
-		var quesry = client.query("SELECT * FROM Customer where name='"+data.name+"'");
+         var query = client.query("INSERT INTO discussion values('"+req.body.username+"','"+req.body.question+"')");
+      });
+         return res.json({});
+    });
+    router.post('/add_ans', function(req, res) {
 
-		quesry.on('row', function(row) {
+      pg.connect(connectionString, function(err, client, done) {
+         if(err) {
+           done();
+           console.log(err);
+           return res.status(500).json({ success: false, data: err});
+         }
 
-        	client.query("INSERT INTO orders(order_id, order_amount, customerid) values($1, $2, $3);", [data.orderId, data.amount, parseInt(row.id)]);
-        	client.query("UPDATE Coupon SET status = 'redeemed' where customerid ="+parseInt(row.id) );
+          var query = client.query("INSERT INTO answer values('"+req.body.username+"','"+req.body.answer+"','"+req.body.id+"')");
+       });
+          return res.json({});
+     });
+    router.post('/view_ques', function(req, res) {
 
+    var results =[];
+
+      pg.connect(connectionString, function(err, client, done) {
+         if(err) {
+           done();
+           console.log(err);
+           return res.status(500).json({ success: false, data: err});
+         }
+
+
+         var query = client.query("SELECT * FROM discussion");
+
+         query.on('row', function(row) {
+             results.push(row);
+          });
+
+         query.on('end', function() {
+             done();
+             //console.log(results);
+             return res.json(results);
+         });
+       });
+          return 0;
+       });
+       router.post('/view_ans', function(req, res) {
+
+       var results =[];
+
+         pg.connect(connectionString, function(err, client, done) {
+            if(err) {
+              done();
+              console.log(err);
+              return res.status(500).json({ success: false, data: err});
+            }
+
+
+            var query = client.query("SELECT * FROM answer where id='"+req.body.id+"'");
+
+            query.on('row', function(row) {
+                results.push(row);
+             });
+
+            query.on('end', function() {
+                done();
+                //console.log(results);
+                return res.json(results);
+            });
+          });
+             return 0;
+          });
+   router.post('/add_fav', function(req, res) {
+
+     pg.connect(connectionString, function(err, client, done) {
+        if(err) {
+          done();
+          console.log(err);
+          return res.status(500).json({ success: false, data: err});
+        }
+
+         client.query("INSERT INTO favourites values('"+req.body.username+"','"+req.body.favusername+"')");
+
+      });
+         return 0;
+    });
+
+    router.post('/get_fav', function(req, res) {
+
+    var results =[];
+
+      pg.connect(connectionString, function(err, client, done) {
+         if(err) {
+           done();
+           console.log(err);
+           return res.status(500).json({ success: false, data: err});
+         }
+
+         var query = client.query("SELECT * FROM favourites where username='"+req.body.username+"'");
+
+         query.on('row', function(row) {
+             results.push(row);
+          });
+
+         query.on('end', function() {
+             done();
+             //console.log(results);
+             return res.json(results);
+         });
+       });
+          return 0;
+       });
+       router.post('/get_data', function(req, res) {
+
+       var results =[];
+
+         pg.connect(connectionString, function(err, client, done) {
+            if(err) {
+              done();
+              console.log(err);
+              return res.status(500).json({ success: false, data: err});
+            }
+
+
+            var query = client.query("SELECT * FROM alumni");
+
+            query.on('row', function(row) {
+                results.push(row);
+             });
+
+            query.on('end', function() {
+                done();
+                //console.log(results);
+                return res.json(results);
+            });
+          });
+             return 0;
+          });
+
+
+router.get('/updateDetail', function(req, res, next) {
+	//
+  res.sendFile(path.join(__dirname, '../views', 'updateDetail.html'));
+
+});
+
+router.post('/userData', function(req, res) {
+
+var results =[];
+
+  pg.connect(connectionString, function(err, client, done) {
+     // Handle connection errors
+     if(err) {
+       done();
+       console.log(err);
+       return res.status(500).json({ success: false, data: err});
+     }
+console.log(req.body);
+  //    client.query("INSERT INTO students values('sd', 'sda', 'cse', '97832', 'sda@efwk', 'about', 'dfsajk')");
+  if (req.body.isAlumni == 'true') {
+    var query = client.query("SELECT * FROM alumni where name='"+req.body.name+"';");
+
+  }else {
+    console.log("SELECT * FROM students where name='"+req.body.name+"';");
+    var query = client.query("SELECT * FROM students where name='"+req.body.name+"';");
+
+  }
+
+     query.on('row', function(row) {
+         results.push(row);
+      });
+
+     query.on('end', function() {
+         done();
+         //console.log(results);
+         return res.json(results);
+     });
+ });
+  //  return 0;
+
+
+});
+
+
+router.post('/userDataUpdate', function(req, res) {
+
+
+  pg.connect(connectionString, function(err, client, done) {
+     // Handle connection errors
+     if(err) {
+       done();
+       console.log(err);
+       return res.status(500).json({ success: false, data: err});
+     }
+     console.log(req.body);
+  //    client.query("INSERT INTO students values('sd', 'sda', 'cse', '97832', 'sda@efwk', 'about', 'dfsajk')");
+  if (req.body.isAlumni == 'true') {
+
+    var query = client.query("UPDATE alumni set companyname ='"+req.body.companyname+"',  email ='"+req.body.email+"', phoneno ='"+req.body.phoneno+"', about ='"+req.body.about+"',timings ='"+req.body.timings+"',jobopenings ='"+req.body.jobopenings+"' where name = '"+req.body.name+"';");
+  }else {
+    console.log("UPDATE students set year ='"+req.body.year+"', branch='"+req.body.branch+"', email ='"+req.body.email+"', phoneno ='"+req.body.phoneno+"', about ='"+req.body.about+"',timings ='"+req.body.timings+"' where name = '"+req.body.name+"';");
+    var query = client.query("UPDATE students set year ='"+req.body.year+"', branch='"+req.body.branch+"', email ='"+req.body.email+"', phoneno ='"+req.body.phoneno+"', about ='"+req.body.about+"',timings ='"+req.body.timings+"' where name = '"+req.body.name+"';");
+  }
+  return res.json({name : "mukul"});
+
+
+ });
+ //return res.json({name : "mukul"});
+
+
+});
+
+
+router.post('/register', function(req, res) {
+
+var results =[];
+  pg.connect(connectionString, function(err, client, done) {
+     // Handle connection errors
+     if(err) {
+       done();
+       console.log(err);
+       return res.status(500).json({ success: false, data: err});
+     }
+    // console.log(req.body);
+      client.query("INSERT INTO users values('"+req.body.name+"', '"+req.body.password+"', '"+req.body.isAlumni+"')");
+      if (req.body.isAlumni) {
+        var query = client.query("INSERT INTO alumni(name) values('"+req.body.name+"')");
+      }else {
+        var query = client.query("INSERT INTO students(name) values('"+req.body.name+"')");
+      }
+
+
+
+ });
+ req.body.username = req.body.name;
+ results.push(req.body);
+return res.json(results);
+
+
+});
+
+router.post('/login', function(req, res) {
+    var results = [];
+    pg.connect(connectionString, function(err, client, done) {
+       if(err) {
+         done();
+         console.log(err);
+         return res.status(500).json({ success: false, data: err});
+       }
+       var query = client.query("SELECT * FROM users where username = '"+req.body.name+"' and password = '"+req.body.password+"';");
+
+       query.on('row', function(row) {
+           results.push(row);
        });
 
-        var query = client.query("SELECT * FROM orders");
-
-        // Stream results back one row at a time
-        query.on('row', function(row) {
-            results.push(row);
-        });
-
-        // After all data is returned, close connection and return results
-        query.on('end', function() {
-            done();
-            return res.json(data);
-        });
-    });
-
-
-
+      query.on('end', function() {
+           done();
+           return res.json(results);
+       });
+   });
 });
 
 
-// --------- When the user clicks on share button -------------
 
 
-router.post('/share', function(req, res) {
-
-	var results = [];
-
-  	var data = {name: req.body.name, email: req.body.email, couponCode: req.body.couponCode};
-   
-     pg.connect(connectionString, function(err, client, done) {
-        // Handle connection errors
-        if(err) {
-          done();
-          console.log(err);
-          return res.status(500).json({ success: false, data: err});
-        }
-
-        client.query("INSERT INTO Customer(name, email_id) values($1, $2);", [data.name, data.email]);
-
-        var query = client.query("SELECT * FROM Customer where name='"+data.name+"'");
-
-		query.on('row', function(row) {
-        	client.query("INSERT INTO Coupon(code_id, status, CustomerId) values($1, $2, $3);", [data.couponCode, 'NEW', parseInt(row.id)]);
-        });
-
-        var query = client.query("SELECT * FROM Coupon ORDER BY code_id ASC");
-
-        query.on('row', function(row) {
-            results.push(row);
-        });
-
-        query.on('end', function() {
-            done();
-            return res.json(results);
-        });
-    });
-
-
-});
 module.exports = router;
