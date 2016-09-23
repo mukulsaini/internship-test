@@ -4,66 +4,51 @@ angular.module('node', [])
 
     $scope.formData = {};
     $scope.userData = {};
-    $scope.check = true;
-    $scope.loginCheck = false;
-    $scope.registerCheck = false;
+
+   
+     $scope.generateCouponCode = function(todoID) {
+        console.log('jkh');
+        $http.post('/generate', $scope.formData)
+            .success(function(data) {
+                $scope.formData = {};
+                $scope.userData = data;
+                console.log(data);
+            })
+            .error(function(error) {
+                console.log('Error: ' + error);
+            });
+    };   
+
+    $scope.shareCouponCode = function(todoID) {
+        console.log("&&&&&&&&"+todoID.name);
+        $scope.formData = todoID;
+
+        $http.post('/share', $scope.formData)
+            .success(function(data) {
+                $scope.formData = {};
+                $scope.userData = data;
+                console.log(data);
+                var orderId = Math.floor(Math.random()*1000);
+                 var orderAmount = Math.floor(Math.random()*1000);
+                window.location.href= "/ad?name="+todoID.name+"&orderId="+orderId+"&orderAmount="+orderAmount;
+            })
+            .error(function(error) {
+                console.log('Error: ' + error);
+            });
+         
+    };
 
 
-    $scope.register = function(){
-      $scope.loginCheck = false;
-      $scope.registerCheck = true;
-      $scope.check = false;
+    $scope.order = function(fsd, asd, lsd){
+        console.log('/placeorder?username='+fsd+'&amount='+lsd+'&orderId='+asd);
+        $http.get('/placeorder?username='+fsd+'&amount='+lsd+'&orderId='+asd, $scope.formData)
+            .success(function(data) {
+                $scope.formData = {};
+                $scope.userData = data;
+                console.log(data);
+            })
+            .error(function(error) {
+                console.log('Error: ' + error);
+            });
     }
-    $scope.rr ={};
-    $scope.login = function(){
-      $scope.loginCheck = true;
-        $scope.check = false;
-    }
-
-    $scope.checkLogin = function(){
-        $scope.formData.name = $scope.rr.username;
-        $scope.formData.password = $scope.rr.password;
-
-        $http.post('/login', $scope.formData)
-          .success(function(data) {
-              $scope.formData = {};
-              $scope.userData = data[0];
-              console.log(data);
-              window.localStorage['username'] = data[0].username;
-              window.localStorage['isAlumni'] = data[0].isalumni;
-              window.location.href= "/updateDetail";
-
-          })
-          .error(function(error) {
-              console.log('Error: ' + error);
-          });
-
-    }
-    $scope.types = ["Alumni", "Student"]
-    $scope.checkRegister = function(){
-        console.log($scope.rr.selectedType);
-        $scope.formData.name = $scope.rr.username;
-        $scope.formData.password = $scope.rr.password;
-        if ($scope.rr.selectedType == "Alumni") {
-          $scope.formData.isAlumni = true;
-        }else {
-          $scope.formData.isAlumni = false;
-        }
-        $http.post('/register', $scope.formData)
-          .success(function(data) {
-              $scope.formData = {};
-              $scope.userData = data[0];
-              console.log(data);
-              window.localStorage['username'] = data[0].username;
-              window.localStorage['isAlumni'] = data[0].isAlumni;
-              window.location.href= "/updateDetail";
-
-          })
-          .error(function(error) {
-              console.log('Error: ' + error);
-          });
-
-    }
-
-
 });
